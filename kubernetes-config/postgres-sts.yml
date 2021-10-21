@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  selector:
+    matchLabels:
+      app: postgres
+  serviceName: postgres-svc
+  replicas: 2
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: database
+        image: postgres:latest
+        ports:
+        - containerPort: 5432
+          name: postgres-port
+        volumeMounts:
+        - name: postgres-volume
+          mountPath: /var/lib/postgresql/data
+        env:
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: secrets
+                key: DB_USERNAME
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: secrets
+                key: DB_PASSWORD
+          - name: POSTGRES_DB
+            valueFrom:
+              secretKeyRef:
+                name: secrets
+                key: DB_DATABASE
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-volume
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 2M
